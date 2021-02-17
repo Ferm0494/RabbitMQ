@@ -12,14 +12,14 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
  
-
+// 
 app.post('/producer/users', async(req,res)=>{
     try{
     let id = generateUniqueId();
     console.log("Unique ID for API!",id);
     const USERS_QUEUE= 'LVL_UP_USERS';
     const USERS_QUEUE_RESULT = 'LVL_UP_USERS_RESULT'
-    const {channel}= await startRabbit();
+    const {channel,connection}= await startRabbit();
     await channel.assertQueue(USERS_QUEUE);
     await channel.assertQueue(USERS_QUEUE_RESULT);
     const msg = {
@@ -27,7 +27,7 @@ app.post('/producer/users', async(req,res)=>{
         text: "Hello World!"
     };
 
-    await channel.sendToQueue(
+    channel.sendToQueue(
         USERS_QUEUE,
         Buffer.from(JSON.stringify(msg)),
         {
@@ -36,12 +36,11 @@ app.post('/producer/users', async(req,res)=>{
         }
     )
 
-    await channel.consume(USERS_QUEUE_RESULT,(msg)=>{
-        channel.ack(msg);
-        console.log(`msgId: ${msg.properties.correlationId} ------ msg: ${msg.content.toString()} ---- and id: ${id}`);
+    channel.consume(USERS_QUEUE_RESULT,(msg)=>{
+       
         if(msg.properties.correlationId === id){
-            console.log(`Got ${msg.content.toString()}`);
-           
+            channel.ack(msg);
+            connection.close();
             res.json({success:true, msg: msg.content.toString()});
 
         }
