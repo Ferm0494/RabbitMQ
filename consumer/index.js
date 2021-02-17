@@ -1,5 +1,4 @@
 const express = require('express')
-const app = express()
 const USERS_QUEUE= 'LVL_UP_USERS';
 const PORT = process.env.PORT || 5000
 const {startRabbit} = require('../config')
